@@ -15,6 +15,7 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
+        "hemispheres": mars_hemispheres(browser),
         "last_modified": dt.datetime.now()
     }
     return data
@@ -99,6 +100,49 @@ def mars_facts():
     df.set_index('description', inplace=True)
 
     return df.to_html()
+
+def mars_hemispheres(browser):
+    # Visit the Astrogeology USGS site:
+    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+    browser.visit(url)
+
+    # Create empty list to hold hemisphere url's & titles:
+    hemisphere_list = []
+
+    #get the full size images
+    browser.is_element_present_by_css("thumb", wait_time=2)
+    thumbnails = browser.find_by_tag('h3')
+
+    #Create 4 hemisphere pics/titles
+    for i in range(0,4):
+        
+        #Click on the thumbnail for each image
+        thumbnails[i].click()
+
+        #Parse
+        html = browser.html
+        hemisphere_soup = BeautifulSoup(html, 'html.parser')
+
+        #Find the relative image url
+        img_url_rel = hemisphere_soup.select_one('.wide-image').get('src')
+        hemisphere_title = hemisphere_soup.find('h2', class_='title').get_text()
+        img_url = f'https://astrogeology.usgs.gov{img_url_rel}'
+
+        #Add to hemishphere_list dictionary
+        hemisphere_dictionary = {}
+        hemisphere_dictionary['img_url'] = img_url
+        hemisphere_dictionary['title'] = hemisphere_title 
+        hemisphere_list.append(hemisphere_dictionary)
+
+        #Hit the back button on the browser
+        browser.back()
+
+        #iterate through all 4 
+        browser.is_element_present_by_css("thumb", wait_time=2)
+        thumbnails = browser.find_by_tag('h3')
+
+    # Return the completed list with pics/titles
+    return hemisphere_list
 
 browser.quit()
 
